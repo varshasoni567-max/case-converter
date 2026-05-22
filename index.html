@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Cleaner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #FBF8F3;
+  --text:        #1A1A1A;
+  --accent:      #E8317A;
+  --accent-dark: #cc2a6b;
+  --border:      #E8E2D8;
+  --muted:       #948d82;
+  --card:        #FFFFFF;
+  --card-head:   #FAF7F2;
+  --r:           14px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Grain ──────────────────────────────────────────────── */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.038;
+  filter: url(#grain-filter);
+  background: #888;
+}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 5.5rem 2rem 7rem;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  margin-bottom: 0.625rem;
+  line-height: 1.1;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--muted);
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+/* ── Fields ─────────────────────────────────────────────── */
+.field {
+  margin-bottom: 1.5rem;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+textarea {
+  display: block;
+  width: 100%;
+  padding: 1.125rem 1.375rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+textarea::placeholder { color: #d0c8be; }
+
+#input {
+  min-height: 220px;
+  resize: vertical;
+}
+
+#input:focus {
+  border-color: #cfc4b8;
+  box-shadow: 0 0 0 3.5px rgba(232, 49, 122, 0.07);
+}
+
+#output {
+  resize: none;
+  min-height: 180px;
+  cursor: default;
+  background: var(--card-head);
+  color: var(--text);
+}
+
+/* ── Output header ──────────────────────────────────────── */
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.field-head-left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.field-label-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Fix badge ──────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.625rem;
+  border-radius: 100px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+  background: #f0ece6;
+  color: var(--muted);
+}
+
+.badge.has-fixes {
+  background: rgba(232, 49, 122, 0.1);
+  color: var(--accent);
+}
+
+.badge.hidden { display: none; }
+
+/* ── Clean button ───────────────────────────────────────── */
+.btn-clean {
+  padding: 0.35rem 1rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(232, 49, 122, 0.06);
+  border: 1.5px solid rgba(232, 49, 122, 0.3);
+  border-radius: 100px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-clean:hover {
+  background: rgba(232, 49, 122, 0.12);
+  border-color: rgba(232, 49, 122, 0.5);
+}
+
+/* ── Copy button ────────────────────────────────────────── */
+.btn-copy {
+  padding: 0.35rem 1rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 100px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-copy:hover {
+  background: rgba(232, 49, 122, 0.06);
+  border-color: rgba(232, 49, 122, 0.3);
+}
+
+.btn-copy.ok {
+  color: #237a42;
+  border-color: #a5d4b5;
+  background: rgba(35, 122, 66, 0.06);
+}
+
+/* ── Clear button ───────────────────────────────────────── */
+.footer {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.5rem;
+}
+
+.btn-clear {
+  padding: 0.65rem 1.5rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 100px;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.btn-clear:hover {
+  color: var(--text);
+  border-color: #bfb5a8;
+}
+
+/* ── Mobile ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .container { padding: 3rem 1.25rem 5rem; }
+  h1 { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- SVG noise filter for grain texture -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <filter id="grain-filter" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" result="n"/>
+      <feColorMatrix type="saturate" values="0" in="n"/>
+    </filter>
+  </defs>
+</svg>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="container">
+
+  <header>
+    <h1>Text Cleaner</h1>
+    <p class="subtitle">Paste messy text — double spaces, smart quotes, garbled characters — it cleans itself instantly</p>
+  </header>
+
+  <!-- Input -->
+  <div class="field">
+    <div class="field-head">
+      <label class="field-label-text" for="input">Input</label>
+      <button class="btn-clean" id="btn-clean" onclick="update()">Clean text</button>
+    </div>
+    <textarea
+      id="input"
+      placeholder="Paste your text here…"
+      spellcheck="false"
+      autocorrect="off"
+      autocapitalize="off"
+    ></textarea>
+  </div>
+
+  <!-- Output -->
+  <div class="field">
+    <div class="field-head">
+      <div class="field-head-left">
+        <span class="field-label-text">Cleaned</span>
+        <span class="badge hidden" id="badge" aria-live="polite"></span>
+      </div>
+      <button class="btn-copy" id="btn-copy" onclick="copyOut()">Copy</button>
+    </div>
+    <textarea
+      id="output"
+      readonly
+      placeholder="Cleaned text will appear here…"
+    ></textarea>
+  </div>
+
+  <div class="footer">
+    <button class="btn-clear" onclick="clearAll()">Clear</button>
+  </div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   Clean engine
+   Each fix() call counts every regex match as one fix.
+--------------------------------------------------------- */
+function cleanText(raw) {
+  if (!raw) return { text: '', fixes: 0 };
+
+  let text = raw;
+  let fixes = 0;
+
+  // Replace and count — each regex match = 1 fix
+  const fix = (pattern, repl) => {
+    text = text.replace(pattern, (...args) => {
+      fixes++;
+      return typeof repl === 'function' ? repl(...args) : repl;
+    });
+  };
+
+  // ── 1. Mojibake: UTF-8 bytes misread as Windows-1252 ──
+  // All patterns use \u escapes to avoid any character ambiguity.
+  // E2 80 XX range — byte 0x80 → € (U+20AC) in Win-1252
+  fix(/â€™/g, '’'); // â€™ → ' (E2 80 99, 0x99→™)
+  fix(/â€˜/g, '‘'); // â€˜ → ' (E2 80 98, 0x98→˜)
+  fix(/â€œ/g, '“'); // â€œ → " (E2 80 9C, 0x9C→œ)
+  fix(/â€”/g, '—'); // â€" → — EM DASH  (E2 80 94, 0x94→")
+  fix(/â€“/g, '–'); // â€" → – EN DASH  (E2 80 93, 0x93→")
+  fix(/â€¦/g, '…'); // â€¦ → … (E2 80 A6, 0xA6→¦)
+  fix(/â€š/g, '‚'); // â€š → ‚ (E2 80 9A, 0x9A→š)
+  // C3 XX range — byte 0xC3 → Ã (U+00C3)
+  fix(/Ã©/g, 'é'); // Ã© → é
+  fix(/Ã¨/g, 'è'); // Ã¨ → è
+  fix(/Ãª/g, 'ê'); // Ãª → ê
+  fix(/Ã«/g, 'ë'); // Ã« → ë  (0xAB → «)
+  fix(/Ã¢/g, 'â'); // Ã¢ → â
+  fix(/Ã´/g, 'ô'); // Ã´ → ô
+  fix(/Ã®/g, 'î'); // Ã® → î
+  fix(/Ã»/g, 'û'); // Ã» → û
+  fix(/Ã§/g, 'ç'); // Ã§ → ç
+  fix(/Ã /g, 'à'); // Ã  → à  (0xA0 → NBSP)
+  fix(/Ãº/g, 'ú'); // Ãº → ú
+  fix(/Ã³/g, 'ó'); // Ã³ → ó
+  fix(/Ã­/g, 'í'); // Ã­ → í  (0xAD → SHY)
+  fix(/Ã±/g, 'ñ'); // Ã± → ñ
+  fix(/Ã¼/g, 'ü'); // Ã¼ → ü
+  fix(/Ã¶/g, 'ö'); // Ã¶ → ö
+  fix(/Ã¤/g, 'ä'); // Ã¤ → ä
+  fix(/ÃŸ/g, 'ß'); // ÃŸ → ß  (0x9F → Ÿ U+0178 in Win-1252)
+
+  // ── 2. Windows line endings (CRLF) and bare CR → LF ──
+  fix(/\r\n|\r/g, '\n');
+
+  // ── 3. Non-breaking and special spaces → regular space ──
+  fix(/[   ⁠­]/g, ' ');
+
+  // ── 4. Zero-width and invisible characters → remove ──
+  fix(/[\u200B\u200C\u200D\uFEFF\u2028\u2029\uFFF9\uFFFA\uFFFB]/g, '');
+
+  // ── 5. Replacement / object characters → remove ──
+  fix(/[�￼]/g, '');
+
+  // ── 6. HTML / XML tags → strip ──
+  fix(/<[a-zA-Z\/!?][^>]{0,2000}>/g, '');
+
+  // ── 7. Smart / curly quotes → straight ──
+  fix(/[‘’‚‛ʼ′]/g, "'");
+  fix(/[“”„‟″]/g, '"');
+
+  // ── 8. Common list bullets → hyphen ──
+  fix(/^[•▪◦◆▸►▶‣⁃⁌⁍●−]\s*/gm, '- ');
+
+  // ── 9. Trailing whitespace on each line ──
+  fix(/[ \t]+$/gm, '');
+
+  // ── 10. Multiple blank lines → single blank line ──
+  fix(/\n{3,}/g, '\n\n');
+
+  // ── 11. Multiple spaces / tabs → single space ──
+  fix(/[ \t]{2,}/g, ' ');
+
+  // ── 12. Repeated punctuation ──
+  fix(/\.{3,}/g, '…');  // 3+ dots → ellipsis character
+  fix(/\?{2,}/g, '?');        // 2+ question marks → one
+  fix(/!{2,}/g, '!');         // 2+ exclamation marks → one
+
+  // ── 13. Symbol garbage from bad copy-paste ──
+  fix(/[©®™]{2,}/g, '');
+  fix(/(?<!\w)[#$%^&*|\\]{3,}(?!\w)/g, '');
+
+  return { text, fixes };
+}
+
+/* ---------------------------------------------------------
+   DOM
+--------------------------------------------------------- */
+const inputEl = document.getElementById('input');
+const outputEl = document.getElementById('output');
+const badgeEl  = document.getElementById('badge');
+const copyBtn  = document.getElementById('btn-copy');
+
+/* ── Live update ────────────────────────────────────── */
+inputEl.addEventListener('input', update);
+// Paste fires before input; defer so value is already updated
+inputEl.addEventListener('paste', () => requestAnimationFrame(update));
+
+function update() {
+  const raw = inputEl.value;
+
+  if (!raw) {
+    outputEl.value = '';
+    badgeEl.classList.add('hidden');
+    fitOutput();
+    return;
+  }
+
+  const { text, fixes } = cleanText(raw);
+  outputEl.value = text;
+  fitOutput();
+  showBadge(fixes);
+}
+
+/* ── Auto-size output to content ────────────────────── */
+function fitOutput() {
+  outputEl.style.height = 'auto';
+  outputEl.style.height = Math.max(180, outputEl.scrollHeight) + 'px';
+}
+
+/* ── Badge ──────────────────────────────────────────── */
+function showBadge(fixes) {
+  badgeEl.classList.remove('hidden');
+  badgeEl.classList.toggle('has-fixes', fixes > 0);
+  badgeEl.textContent = fixes === 0
+    ? 'No changes'
+    : `${fixes} fix${fixes === 1 ? '' : 'es'}`;
+}
+
+/* ── Copy ───────────────────────────────────────────── */
+function copyOut() {
+  const text = outputEl.value;
+  if (!text) return;
+
+  const done = () => {
+    copyBtn.textContent = 'Copied!';
+    copyBtn.classList.add('ok');
+    setTimeout(() => {
+      copyBtn.textContent = 'Copy';
+      copyBtn.classList.remove('ok');
+    }, 2000);
+  };
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+
+  function fallback() {
+    outputEl.select();
+    document.execCommand('copy');
+    done();
+  }
+}
+
+/* ── Clear ──────────────────────────────────────────── */
+function clearAll() {
+  inputEl.value = '';
+  outputEl.value = '';
+  outputEl.style.height = '';
+  badgeEl.classList.add('hidden');
+  inputEl.focus();
+}
+</script>
+</body>
+</html>
